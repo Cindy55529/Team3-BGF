@@ -1,23 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import login1 from '../images/login1.jpg';
 import usePasswordToggle from '../hooks/usePasswordToggle';
 import '../css/eye.css';
-import useForm from '../hooks/useForm';
 import validate from '../components/ValidateLogin';
 
 function Login2(props) {
   // const [email, setEmail] = useState('');
   // const [password, setPassword] = useState('');
-  const {
-    handleChange,
-    handleFormChange,
-    handleFormInvalid,
-    handleSubmit,
-    values,
-    errors,
-  } = useForm(submit, validate);
+  const [values, setValues] = useState({
+    email: '',
+    password: '',
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setValues({
+      ...values,
+      [name]: value,
+    });
+  };
+
+  //使用者修改欄位時 清空錯誤訊息
+  const handleFormChange = (e) => {
+    console.log('更新欄位: ', e.target.name);
+
+    // 該欄位的錯誤訊息清空
+    const updatedErrors = {
+      ...errors,
+      [e.target.name]: '',
+    };
+
+    setErrors(updatedErrors);
+  };
+
+  // 表單有不合法的檢查出現時
+  const handleFormInvalid = (e) => {
+    // 擋住錯誤訊息預設呈現方式(跳出的訊息泡泡)
+    e.preventDefault();
+    setErrors(validate(values));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    //錯誤處理
+    setErrors(validate(values));
+    setIsSubmitting(true);
+  };
+
+  useEffect(() => {
+    if (Object.keys(errors).length === 0 && isSubmitting) {
+      submit();
+    }
+  }, [errors]);
   const [PasswordInputType, ToggleIcon] = usePasswordToggle();
 
   function submit() {
@@ -26,8 +66,8 @@ function Login2(props) {
 
   return (
     <>
-      <div className="container w-full md:mx-auto">
-        <div className="flex w-full md:w-2/3 md:mx-auto mt-10 mb-10 shadow-md">
+      <div className="container w-full md:mx-auto ">
+        <div className="flex w-full md:w-2/3 md:mx-auto my-16 shadow-md">
           <div className="hidden md:flex md:w-1/2">
             <img className="object-cover" src={login1} alt="sidePicture" />
           </div>

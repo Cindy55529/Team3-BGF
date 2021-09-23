@@ -4,8 +4,8 @@ import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
 function Sidebar() {
   return (
     <>
-      <div className="hidden lg:flex lg:flex-col lg:w-64 lg:h-screen lg:px-10 lg:py-8 lg:bg-white lg:border-r">
-        <h2 className="pl-3 mt-20 text-3xl font-semibold text-left text-gray-800">
+      <div className="hidden lg:flex lg:flex-col lg:w-64 lg:h-screen lg:px-10 lg:py-5 lg:bg-white lg:border-r">
+        <h2 className="pl-3 mt-5 text-3xl font-semibold text-left text-gray-800">
           會員中心
         </h2>
         <h3 className="pl-10 mt-8 font-semibold text-left">Hi,Gail</h3>

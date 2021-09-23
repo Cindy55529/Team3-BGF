@@ -1,15 +1,111 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import BreadCrumbs from '../components/BreadCrumbs';
-import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
-import w1 from '../images/w1.jpg';
+import user from '../images/user.png';
+import closeicon from '../images/closeicon.svg';
+import { API_URL } from '../utils/config';
+import ValidateMemberEdit from '../components/ValidateMemberEdit';
+import axios from 'axios';
+
+//測試有無讀取到環境變數
+console.log(API_URL);
 
 function MemberEdit(props) {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [date, setDate] = useState('2021-08-01');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
+  const [image, setImage] = useState('');
+  const [isUploaded, setIsUploaded] = useState(false);
+  // const [username, setUsername] = useState('');
+  // const [email, setEmail] = useState('');
+  // const [date, setDate] = useState('2021-08-01');
+  // const [phone, setPhone] = useState('');
+  // const [address, setAddress] = useState('');
+
+  const [values, setValues] = useState({
+    username: '',
+    email: '',
+    birth: '',
+    phone: '',
+    address: '',
+    image: '',
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setValues({
+      ...values,
+      [name]: value,
+    });
+  };
+
+  //使用者修改欄位時 清空錯誤訊息
+  const handleFormChange = (e) => {
+    console.log('更新欄位: ', e.target.name);
+
+    // 該欄位的錯誤訊息清空
+    const updatedErrors = {
+      ...errors,
+      [e.target.name]: '',
+    };
+
+    setErrors(updatedErrors);
+  };
+
+  // 表單有不合法的檢查出現時
+  const handleFormInvalid = (e) => {
+    // 擋住錯誤訊息預設呈現方式(跳出的訊息泡泡)
+    e.preventDefault();
+    setErrors(ValidateMemberEdit(values));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    //送資料到後端
+    try {
+      let formData = new FormData();
+      formData.append('username', values.username);
+      formData.append('email', values.email);
+      formData.append('birth', values.birth);
+      formData.append('phone', values.phone);
+      formData.append('address', values.address);
+      formData.append('image', values.image);
+      let response = await axios.post(`${API_URL}/auth/memberEdit`, formData);
+      console.log(response);
+    } catch (e) {
+      console.error(e.response);
+      //alert(e.response.data.message);
+    }
+    //錯誤處理
+    setErrors(ValidateMemberEdit(values));
+    setIsSubmitting(true);
+  };
+
+  useEffect(() => {
+    if (Object.keys(errors).length === 0 && isSubmitting) {
+      submit();
+    }
+  }, [errors]);
+
+  function submit() {
+    console.log('成功送出!!');
+  }
+
+  function handleImageChange(e) {
+    if (e.target.files && e.target.files[0]) {
+      let reader = new FileReader();
+      reader.onload = function (event) {
+        setImage(event.target.result);
+        setValues({
+          ...values,
+          image: e.target.files[0],
+        });
+        setIsUploaded(true);
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  }
   return (
     <>
       <div className="container flex mx-auto">
@@ -19,55 +115,102 @@ function MemberEdit(props) {
           <h2 className="pl-10 text-3xl font-medium">會員資料修改</h2>
           <div className="mx-8 md:my-5 my-0">
             <div className="mt-5 md:mt-0 md:col-span-2">
-              <form action="#" method="POST">
+              <form
+                onSubmit={handleSubmit}
+                onChange={handleFormChange}
+                onInvalid={handleFormInvalid}
+              >
                 <div className="overflow-hidden shadow rounded-md">
                   <div className="px-4 py-5 sm:p-6">
-                    <div className="mx-auto mb-14 relative w-28 h-28">
-                      <img
-                        className="h-28 w-28 rounded-full border border-gray-100 shadow-sm object-cover"
-                        src={w1}
-                        alt="user image"
-                      />
-                      <input type="file" />
-                      <div className="absolute top-16 right-0 h-8 w-8 my-1 border-4 border-white rounded-full bg-white z-2">
-                        <svg
-                          className="fill-current text-yellow-600"
-                          xmlns="http://www.w3.org/2000/svg"
-                          x="0"
-                          y="0"
-                          enableBackground="new 0 0 420.8 420.8"
-                          version="1.1"
-                          viewBox="0 0 420.8 420.8"
-                          xmlSpace="preserve"
-                        >
-                          <path d="M406.8 96.4c-8.4-8.8-20-14-33.2-14h-66.4v-.8c0-10-4-19.6-10.8-26-6.8-6.8-16-10.8-26-10.8h-120c-10.4 0-19.6 4-26.4 10.8-6.8 6.8-10.8 16-10.8 26v.8h-66c-13.2 0-24.8 5.2-33.2 14-8.4 8.4-14 20.4-14 33.2v199.2C0 342 5.2 353.6 14 362c8.4 8.4 20.4 14 33.2 14h326.4c13.2 0 24.8-5.2 33.2-14 8.4-8.4 14-20.4 14-33.2V129.6c0-13.2-5.2-24.8-14-33.2zM400 328.8h-.4c0 7.2-2.8 13.6-7.6 18.4s-11.2 7.6-18.4 7.6H47.2c-7.2 0-13.6-2.8-18.4-7.6-4.8-4.8-7.6-11.2-7.6-18.4V129.6c0-7.2 2.8-13.6 7.6-18.4s11.2-7.6 18.4-7.6h77.2c6 0 10.8-4.8 10.8-10.8V81.2c0-4.4 1.6-8.4 4.4-11.2s6.8-4.4 11.2-4.4h119.6c4.4 0 8.4 1.6 11.2 4.4 2.8 2.8 4.4 6.8 4.4 11.2v11.6c0 6 4.8 10.8 10.8 10.8H374c7.2 0 13.6 2.8 18.4 7.6s7.6 11.2 7.6 18.4v199.2z"></path>
-                          <path d="M210.4 130.8c-27.2 0-52 11.2-69.6 28.8-18 18-28.8 42.4-28.8 69.6s11.2 52 28.8 69.6c18 18 42.4 28.8 69.6 28.8s52-11.2 69.6-28.8c18-18 28.8-42.4 28.8-69.6s-11.2-52-28.8-69.6c-17.6-17.6-42.4-28.8-69.6-28.8zM264.8 284c-14 13.6-33.2 22.4-54.4 22.4S170 297.6 156 284c-14-14-22.4-33.2-22.4-54.4 0-21.2 8.8-40.4 22.4-54.4 14-14 33.2-22.4 54.4-22.4s40.4 8.8 54.4 22.4c14 14 22.4 33.2 22.4 54.4.4 21.2-8.4 40.4-22.4 54.4z"></path>
-                          <circle cx="352.8" cy="150" r="19.6"></circle>
-                        </svg>
-                      </div>
-                    </div>
                     <div className="">
                       <div className="w-3/5 my-5 mx-auto">
+                        <p className="text-center font-normal">上傳頭像</p>
+                        <p className=" text-center font-normal">
+                          (僅支援jpg、jpeg、png檔)
+                        </p>
+                        <div className="mx-auto mt-5 mb-14 relative w-28 h-28">
+                          {!isUploaded ? (
+                            <>
+                              <label htmlFor="upload-input">
+                                <img
+                                  className="h-28 w-28 rounded-full border border-gray-100 shadow-sm object-cover hover:opacity-80 cursor-pointer"
+                                  src={user}
+                                  alt="user image"
+                                  draggable={'false'}
+                                />
+                                <div className="absolute top-16 right-0 h-7 w-7 my-1 border-4 border-white rounded-full bg-white z-2">
+                                  <svg
+                                    className="fill-current text-yellow-600 hover:opacity-80 cursor-pointer"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    x="0"
+                                    y="0"
+                                    enableBackground="new 0 0 490.667 490.667"
+                                    version="1.1"
+                                    viewBox="0 0 490.667 490.667"
+                                    xmlSpace="preserve"
+                                  >
+                                    <path d="M448 128h-67.627l-39.04-42.667H192v64h-64v64H64v213.333c0 23.467 19.2 42.667 42.667 42.667H448c23.467 0 42.667-19.2 42.667-42.667v-256C490.667 147.2 471.467 128 448 128zM277.333 405.333c-58.88 0-106.667-47.787-106.667-106.667S218.453 192 277.333 192 384 239.787 384 298.667s-47.787 106.666-106.667 106.666z"></path>
+                                    <path d="M64 192L106.667 192 106.667 128 170.667 128 170.667 85.333 106.667 85.333 106.667 21.333 64 21.333 64 85.333 0 85.333 0 128 64 128z"></path>
+                                    <path d="M277.333 230.4c-37.76 0-68.267 30.507-68.267 68.267 0 37.76 30.507 68.267 68.267 68.267 37.76 0 68.267-30.507 68.267-68.267S315.093 230.4 277.333 230.4z"></path>
+                                  </svg>
+                                </div>
+                              </label>
+                              <input
+                                id="upload-input"
+                                type="file"
+                                name="image"
+                                className="hidden"
+                                accept=".jpg, .jpeg, .png"
+                                onChange={handleImageChange}
+                              />
+                            </>
+                          ) : (
+                            <div className="relative">
+                              <img
+                                src={closeicon}
+                                className="absolute top-16 right-0 h-7 w-7 my-1 border-4 border-white rounded-full bg-white z-5 cursor-pointer hover:opacity-80"
+                                alt="closeIcon"
+                                onClick={() => {
+                                  setIsUploaded(false);
+                                  setImage(null);
+                                }}
+                              />
+                              <img
+                                src={image}
+                                alt="uploaded-img"
+                                className="h-28 w-28 rounded-full object-cover"
+                                draggable={'false'}
+                              />
+                            </div>
+                          )}
+                        </div>
                         <label
-                          htmlFor="name"
+                          htmlFor="username"
                           className="block text-base font-medium text-gray-700"
                         >
                           姓名
                         </label>
                         <input
                           type="text"
-                          name="name"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          id="name"
-                          autocomplete="name"
-                          className="block w-full mt-1 h-8 border-b-2  focus:ring-gold-300 focus:outline-none focus:ring-2 tracking-wider focus:border-opacity-0  text-base rounded-md "
+                          name="username"
+                          value={values.username}
+                          onChange={handleChange}
+                          id="username"
+                          autoComplete="name"
+                          className={`${
+                            errors.username && 'ring-red-300 ring-1'
+                          } w-full h-8 mt-2  border-b-2 rounded focus:ring-gold-300 focus:outline-none focus:ring-2 focus:border-opacity-0 tracking-wider`}
                         />
+                        {errors.username && (
+                          <p className="text-red-400 text-xs">
+                            {errors.username}
+                          </p>
+                        )}
                       </div>
 
                       <div className="w-3/5 my-5 mx-auto">
                         <label
-                          htmlFor="email-address"
+                          htmlFor="email"
                           className="block text-base font-medium text-gray-700"
                         >
                           電子信箱
@@ -75,28 +218,38 @@ function MemberEdit(props) {
                         <input
                           type="email"
                           name="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          value={values.email}
+                          onChange={handleChange}
                           id="email"
-                          autocomplete="email"
-                          className="block w-full mt-1 h-8 border-b-2  focus:ring-gold-300 focus:outline-none focus:ring-2 tracking-wider focus:border-opacity-0  text-base rounded-md"
+                          autoComplete="email"
+                          className={`${
+                            errors.email && 'ring-red-300 ring-1'
+                          } w-full h-8 mt-2  border-b-2 rounded focus:ring-gold-300 focus:outline-none focus:ring-2 focus:border-opacity-0 tracking-wider`}
                         />
+                        {errors.email && (
+                          <p className="text-red-400 text-xs">{errors.email}</p>
+                        )}
                       </div>
                       <div className="w-3/5 my-5 mx-auto">
                         <label
-                          htmlFor="country"
+                          htmlFor="birth"
                           className="block text-base font-medium text-gray-700"
                         >
                           生日
                         </label>
                         <input
-                          className="block w-full mt-1 h-8 border-b-2  focus:ring-gold-300 focus:outline-none focus:ring-2 tracking-wider focus:border-opacity-0  text-base rounded-md"
                           type="date"
-                          value={date}
-                          onChange={(e) => {
-                            setDate(e.target.value);
-                          }}
+                          name="birth"
+                          id="birth"
+                          value={values.birth}
+                          onChange={handleChange}
+                          className={`${
+                            errors.birth && 'ring-red-300 ring-1'
+                          } w-full h-8 mt-2  border-b-2 rounded focus:ring-gold-300 focus:outline-none focus:ring-2 focus:border-opacity-0 tracking-widest`}
                         />
+                        {errors.birth && (
+                          <p className="text-red-400 text-xs">{errors.birth}</p>
+                        )}
                       </div>
                       <div className="w-3/5 my-5 mx-auto">
                         <label
@@ -108,16 +261,21 @@ function MemberEdit(props) {
                         <input
                           type="number"
                           name="phone"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          value={values.phone}
+                          onChange={handleChange}
                           id="phone"
-                          autocomplete="phone"
-                          className="block w-full mt-1 h-8 border-b-2  focus:ring-gold-300 focus:outline-none focus:ring-2 tracking-wider focus:border-opacity-0  text-base rounded-md"
+                          autoComplete="phone"
+                          className={`${
+                            errors.phone && 'ring-red-300 ring-1'
+                          } w-full h-8 mt-2  border-b-2 rounded focus:ring-gold-300 focus:outline-none focus:ring-2 focus:border-opacity-0 tracking-widest`}
                         />
+                        {errors.phone && (
+                          <p className="text-red-400 text-xs">{errors.phone}</p>
+                        )}
                       </div>
                       <div className="w-3/5 my-5 mx-auto">
                         <label
-                          htmlFor="street-address"
+                          htmlFor="address"
                           className="block text-base font-medium text-gray-700"
                         >
                           地址
@@ -125,12 +283,19 @@ function MemberEdit(props) {
                         <input
                           type="text"
                           name="address"
-                          value={address}
-                          onChange={(e) => setAddress(e.target.value)}
+                          value={values.address}
+                          onChange={handleChange}
                           id="address"
-                          autocomplete="address"
-                          className="block w-full mt-1 h-8 border-b-2  focus:ring-gold-300 focus:outline-none focus:ring-2 tracking-wider focus:border-opacity-0  text-base rounded-md"
+                          autoComplete="address"
+                          className={`${
+                            errors.address && 'ring-red-300 ring-1'
+                          } w-full h-8 mt-2  border-b-2 rounded focus:ring-gold-300 focus:outline-none focus:ring-2 focus:border-opacity-0 tracking-widest`}
                         />
+                        {errors.address && (
+                          <p className="text-red-400 text-xs">
+                            {errors.address}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="px-4 py-3 w-3/5 mx-auto sm:px-6 text-right">

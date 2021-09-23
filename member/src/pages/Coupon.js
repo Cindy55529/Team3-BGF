@@ -1,13 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
 import BreadCrumbs from '../components/BreadCrumbs';
-import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 
 function Coupon() {
   return (
     <>
-      <Navbar />
       <div className="container flex mx-auto">
         <Sidebar />
         <div className="">

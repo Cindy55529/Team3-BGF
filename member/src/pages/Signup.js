@@ -1,29 +1,93 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import login1 from '../images/login1.jpg';
 import usePasswordToggle from '../hooks/usePasswordToggle';
 import '../css/eye.css';
-import useForm from '../hooks/useForm';
+//import useForm from '../hooks/useForm';
 import validate from '../components/ValidateSignUp';
+import { API_URL } from '../utils/config';
+import axios from 'axios';
+
+//測試有無讀取到環境變數
+console.log(API_URL);
 
 function Signup(props) {
-  const {
-    handleChange,
-    handleFormChange,
-    handleFormInvalid,
-    handleSubmit,
-    values,
-    errors,
-  } = useForm(submit, validate);
+  const [values, setValues] = useState({
+    username: '',
+    email: '',
+    password: '',
+    password2: '',
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setValues({
+      ...values,
+      [name]: value,
+    });
+  };
+
+  //使用者修改欄位時 清空錯誤訊息
+  const handleFormChange = (e) => {
+    console.log('更新欄位: ', e.target.name);
+
+    // 該欄位的錯誤訊息清空
+    const updatedErrors = {
+      ...errors,
+      [e.target.name]: '',
+    };
+
+    setErrors(updatedErrors);
+  };
+
+  // 表單有不合法的檢查出現時
+  const handleFormInvalid = (e) => {
+    // 擋住錯誤訊息預設呈現方式(跳出的訊息泡泡)
+    e.preventDefault();
+    setErrors(validate(values));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    //送資料到後端
+    try {
+      let response = await axios.post(`${API_URL}/auth/register`, {
+        username: values.username,
+        email: values.email,
+        password: values.password,
+        password2: values.password2,
+      });
+      console.log(response);
+    } catch (e) {
+      console.error(e.response);
+      alert(e.response.data.message);
+    }
+    //錯誤處理
+    setErrors(validate(values));
+    setIsSubmitting(true);
+  };
+
+  useEffect(() => {
+    if (Object.keys(errors).length === 0 && isSubmitting) {
+      submit();
+    }
+  }, [errors]);
+
+  //顯示/隱藏密碼
   const [PasswordInputType, ToggleIcon] = usePasswordToggle();
+
   function submit() {
     console.log('成功送出!!');
   }
+
   return (
     <>
       <div className="container w-full md:mx-auto ">
-        <div className="flex w-full md:w-2/3 md:mx-auto mt-10 mb-10 shadow-md">
+        <div className="flex w-full md:w-2/3 md:mx-auto my-16 shadow-md">
           <div className="hidden md:flex md:w-1/2">
             <img className="object-cover" src={login1} alt="sidePicture" />
           </div>
@@ -87,7 +151,7 @@ function Signup(props) {
                       errors.password && 'ring-red-300 ring-1'
                     } w-full h-8 mt-2  border-b-2 rounded focus:ring-gold-300 focus:outline-none focus:ring-2 focus:border-opacity-0 tracking-widest`}
                   />
-                  <span className="password-toogle-icon">{ToggleIcon}</span>
+                  {/* <span className="password-toogle-icon">{ToggleIcon}</span> */}
                   {errors.password && (
                     <p className="text-red-400 text-xs">{errors.password}</p>
                   )}
@@ -107,7 +171,7 @@ function Signup(props) {
                       errors.password2 && 'ring-red-300 ring-1'
                     } w-full h-8 mt-2  border-b-2 rounded focus:ring-gold-300 focus:outline-none focus:ring-2 focus:border-opacity-0 tracking-widest`}
                   />
-                  <span className="password-toogle-icon">{ToggleIcon}</span>
+                  {/* <span className="password-toogle-icon">{ToggleIcon}</span> */}
                   {errors.password2 && (
                     <p className="text-red-400 text-xs">{errors.password2}</p>
                   )}

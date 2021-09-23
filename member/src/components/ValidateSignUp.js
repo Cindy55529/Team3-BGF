@@ -19,5 +19,6 @@ export default function ValidateSignUp(values) {
   } else if (values.password2 !== values.password) {
     errors.password2 = '兩個密碼不相符';
   }
+
   return errors;
 }

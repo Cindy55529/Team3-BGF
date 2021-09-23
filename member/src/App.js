@@ -2,7 +2,8 @@
 import './components/FontAwsomeIcons';
 import './App.css';
 import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import MyNavbar from './components/MyNavbar';
+import MyFooter from './components/MyFooter';
 import Sidebar from './components/Sidebar';
 import Coupon from './pages/Coupon';
 import Login from './pages/Login';
@@ -16,7 +17,7 @@ function App() {
   return (
     <Router>
       <>
-        <Navbar />
+        <MyNavbar />
         <Link to="/Login2">Login2</Link>
         <Link to="/Login2/Signup">Signup</Link>
         <Link to="/MemberCenter">MemberCenter</Link>
@@ -41,6 +42,7 @@ function App() {
             <MemberCenter />
           </Route>
         </Switch>
+        <MyFooter />
       </>
     </Router>
   );

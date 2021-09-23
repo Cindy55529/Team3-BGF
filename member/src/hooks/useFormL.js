@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { API_URL } from '../utils/config';
 
 //錯誤訊息步驟
 //1.建立一個新的錯誤處理狀態
 //2.一個錯誤處理的function
 //3.送回去給表單
 
-const useForm = (callback, validate) => {
+const useFormL = (callback, validate) => {
   const [values, setValues] = useState({
-    username: '',
     email: '',
     password: '',
-    password2: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -47,10 +43,8 @@ const useForm = (callback, validate) => {
     setErrors(validate(values));
   };
 
-  const handleSubmit =  (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    //送資料到後端
-    
 
     //錯誤處理
     setErrors(validate(values));
@@ -73,4 +67,4 @@ const useForm = (callback, validate) => {
   };
 };
 
-export default useForm;
+export default useFormL;
