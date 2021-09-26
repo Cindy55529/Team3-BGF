@@ -71,7 +71,7 @@ function MemberEdit(props) {
       formData.append('phone', values.phone);
       formData.append('address', values.address);
       formData.append('image', values.image);
-      let response = await axios.post(`${API_URL}/auth/memberEdit`, formData);
+      let response = await axios.post(`${API_URL}/member/memberEdit`, formData);
       console.log(response);
     } catch (e) {
       console.error(e.response);

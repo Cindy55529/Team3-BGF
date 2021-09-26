@@ -4,6 +4,9 @@ import login1 from '../images/login1.jpg';
 import usePasswordToggle from '../hooks/usePasswordToggle';
 import '../css/eye.css';
 import validate from '../components/ValidateLogin';
+import { API_URL } from '../utils/config';
+import axios from 'axios';
+
 
 function Login2(props) {
   // const [email, setEmail] = useState('');
@@ -45,12 +48,23 @@ function Login2(props) {
     setErrors(validate(values));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    //送資料到後端
+    try {
+      let response = await axios.post(`${API_URL}/auth/login`, {
+        email: values.email,
+        password: values.password,
+      });
+      console.log(response);
+      setIsSubmitting(true);
+    } catch (e) {
+      console.error(e.response);
+     // alert(e.response.data.message);
+    }
 
     //錯誤處理
     setErrors(validate(values));
-    setIsSubmitting(true);
   };
 
   useEffect(() => {

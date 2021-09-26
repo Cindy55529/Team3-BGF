@@ -62,13 +62,13 @@ function Signup(props) {
         password2: values.password2,
       });
       console.log(response);
+      setIsSubmitting(true);
     } catch (e) {
       console.error(e.response);
       alert(e.response.data.message);
     }
     //錯誤處理
     setErrors(validate(values));
-    setIsSubmitting(true);
   };
 
   useEffect(() => {

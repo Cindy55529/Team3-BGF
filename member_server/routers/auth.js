@@ -6,6 +6,7 @@ const connection = require('../utils/db');
 //nodejs內建的
 const path = require('path');
 
+//註冊
 //4.使用express-validator 做資料驗證
 const { body, validationResult } = require('express-validator');
 const registerRules = [
@@ -23,20 +24,9 @@ const registerRules = [
     .withMessage('密碼驗證不一致'),
 ];
 
-const memberEditRules = [
-  body('username').notEmpty().withMessage('請輸入此欄位'),
-  body('username').isLength({ min: 2 }).withMessage('姓名長度至少為2'),
-  body('email').notEmpty().withMessage('請輸入此欄位'),
-  body('email').isEmail().withMessage('請填寫正確的Email格式'),
-  body('birth').notEmpty().withMessage('請輸入此欄位'),
-  body('birth').isISO8601().toDate().withMessage('請填寫正確的生日格式'),
-  body('phone').notEmpty().withMessage('請輸入此欄位'),
-  body('address').notEmpty().withMessage('請輸入此欄位'),
-];
-
 const bcrypt = require('bcrypt');
 
-//註冊格式驗證
+//註冊API
 //1.建立好註冊路由
 router.post('/register', registerRules, async (req, res, next) => {
   //5.將驗證結果放進路由中間件
@@ -50,6 +40,17 @@ router.post('/register', registerRules, async (req, res, next) => {
     //console.log(errorMsg);
     //回覆所有錯誤
     return res.status(400).json({ field: errorParam, message: errorMsg });
+  }
+  //8.檢查帳號(email)有無重複
+  let member = await connection.queryAsync(
+    'SELECT * FROM member WHERE email = ?;',
+    [req.body.email]
+  );
+  if (member.length > 0) {
+    return next({
+      status: 400,
+      message: '此信箱已註冊過了',
+    });
   }
   //2.確認有拿到資料
   console.log(req.body);
@@ -67,93 +68,39 @@ router.post('/register', registerRules, async (req, res, next) => {
   res.json({});
 });
 
-
-//為了處理multipart/form-data 所以使用multer
-//multer設定儲存位置
-const multer = require('multer');
-const { dirname } = require('path');
-//因為圖片上傳 用formdata 要告訴她上傳檔案存在哪裡(通常存在硬碟 => diskStorage)
-const storage = multer.diskStorage({
-  //設定儲存目的地 cb是callback
-  //三個參數： request 物件、帶有上傳檔案資訊的file 物件、篩選完成後呼叫的cb 函式
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname,"..","public","uploads"));
-  },
-  //檔案命名
-  filename: function (req, file, cb) {
-    console.log('檔案名稱', file);
-    cb(null, file.originalname);
-  },
-});
-
-//正式開始使用multer
-//2-1先設一個變數
-const uploader = multer({
-  //2-2告訴他存在哪(上面設定過了)
-  storage: storage,
-  //2-3檔案驗證 限制上傳格式 (非常重要)
-  fileFilter: function (req, file, cb) {
-    //印出檔案格式
-    console.log('檔案格式', file.mimetype);
-    if (
-      file.mimetype !== 'image/jpg' &&
-      file.mimetype !== 'image/jpeg' &&
-      file.mimetype !== 'image/png'
-    ) {
-      cb(new Error('不接受的檔案型態'), false);
-    }
-    cb(null, true);
-  },
-  //2-4限制檔案大小 (1M)
-  limits: {
-    fileSize: 1024 * 1024,
-  },
-});
-//會員資料修改格式驗證
-//1.建立好會員資料修改路由
-//2-5將uploader放進中間件(注意要放在格式驗證前面 因為驗證規則需要解譯過的資料)
-//只有一張照片就用single(欄位名稱)
-router.post(
-  '/memberEdit',
-  uploader.single('image'),
-  memberEditRules,
-  async (req, res, next) => {
-    //5.將驗證結果放進路由中間件
-    const validateResult = validationResult(req);
-    //console.log(validateResult);
-    if (!validateResult.isEmpty()) {
-      let error = validateResult.array();
-      console.log(error);
-      let errorParam = error.map((item) => Object.values(item)[2]);
-      let errorMsg = error.map((item) => Object.values(item)[1]);
-      //console.log(errorMsg);
-      //回覆所有錯誤
-      return res.status(400).json({ field: errorParam, message: errorMsg });
-    }
-    //2.確認有拿到資料
-    //console.log(req.body);
-    //2-6確認有拿到資料(如果multer有成功的話)
-    console.log('最終結果', req.file);
-    //6.將create_time放進資料庫
-    // let current = new Date(+new Date() + 8 * 3600 * 1000);
-    // let currentDateTime = current.toISOString().slice(0, 19).replace('T', ' ');
-    // //3.將註冊資料存入資料庫
-    // let result = await connection.queryAsync(
-    //   'INSERT INTO member (username,email,birth,phone,address,image,update_time) VALUES (?);',
-    //   [
-    //     [
-    //       req.body.username,
-    //       req.body.email,
-    //       req.body.birth,
-    //       req.body.phone,
-    //       req.body.address,
-    //       req.body.image,
-    //       currentDateTime,
-    //     ],
-    //   ]
-    // );
-     res.json({});
+//登入
+//登入API
+//1.建立登入API
+router.post('/login', async (req, res, next) => {
+  //2.檢查帳號(email)是否存在
+  let member = await connection.queryAsync(
+    'SELECT * FROM member WHERE email = ?;',
+    [req.body.email]
+  );
+  console.log(member);
+  //console.log(member.create_time)
+  if (member.length === 0) {
+    return next({
+      status: 400,
+      message: '找不到帳號',
+    });
   }
-);
+
+  //3.密碼比對
+  //(1)有找到相符資料一筆 設為變數(註冊時有檢查帳號是否重複 因此正常情況下應只有一筆資料)
+  member = member[0];
+  //(2)使用bcrypt套件的compare做密碼比對
+  let result = await bcrypt.compare(req.body.password, member.password);
+  //console.log(req.body.password)
+  //(3)判斷密碼正確或錯誤
+  if (!result) {
+    //如果錯誤
+    return next({
+      status: 400,
+      message: '密碼錯誤',
+    });
+  }
+  res.json({});
+});
 
 module.exports = router;
